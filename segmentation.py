@@ -69,8 +69,14 @@ def segmentation_keras_load():
     # dir_images = "frames/Segmentation/Data/Images"
     # dir_masks = "frames/Segmentation/Data/Masks"
 
-    dir_images = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Images"
-    dir_masks = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Masks"
+    dir_images = "/content/Seg_Data/Images"
+    dir_masks = "/content/Seg_Data/Masks"
+
+
+    """ Defining the model figure file directory / path"""
+    # model_fig_file = 'Output/Model_figure/segmentation_model_u_net.png'
+    model_fig_file = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/segmentation_model_u_net.png"
+
 
     """ Start reading data (Frames and masks) and save them in Numpy array for Training, Validation and Test"""
     allfiles_image = sorted(
@@ -143,7 +149,6 @@ def segmentation_keras_load():
 
     """ Training the Model ... """
     model = model_unet_kaggle(img_height, img_width, img_channels, num_classes)
-    model_fig_file = 'Output/Model_figure/segmentation_model_u_net.png'
     tf.keras.utils.plot_model(model, to_file=model_fig_file, show_shapes=True)
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=METRICS)
     checkpoint = tf.keras.callbacks.ModelCheckpoint("FireSegmentation.h5", save_best_only=True)
