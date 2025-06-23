@@ -67,6 +67,9 @@ def train_keras():
     # https://keras.io/examples/vision/image_classification_from_scratch/
     print(" --------- Training --------- ")
 
+    '''
+    change directory according to your project structure
+    '''
     dir_fire = 'frames/Training/Fire/'
     dir_no_fire = 'frames/Training/No_Fire/'
 
