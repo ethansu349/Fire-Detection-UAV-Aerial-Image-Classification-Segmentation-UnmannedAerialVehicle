@@ -63,9 +63,14 @@ def segmentation_keras_load():
     img_height = img_size[1]
     epochs = config_segmentation.get('Epochs')
     img_channels = config_segmentation.get('CHANNELS')
-    dir_images = "frames/Segmentation/Data/Images"
-    dir_masks = "frames/Segmentation/Data/Masks"
     num_classes = config_segmentation.get("num_class")
+
+    """ Defining the directory of the images and masks """
+    # dir_images = "frames/Segmentation/Data/Images"
+    # dir_masks = "frames/Segmentation/Data/Masks"
+
+    dir_images = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Images"
+    dir_masks = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Masks"
 
     """ Start reading data (Frames and masks) and save them in Numpy array for Training, Validation and Test"""
     allfiles_image = sorted(
