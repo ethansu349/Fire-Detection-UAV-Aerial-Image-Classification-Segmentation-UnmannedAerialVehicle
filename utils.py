@@ -123,9 +123,9 @@ def rename_all_files(path=None):
     :return: None
     """
     regex = re.compile(r'\d+')
-    if path is "Image":
+    if path == "Image":
         path_dir = "frames/Segmentation/Data/Images"
-    elif path is "Mask":
+    elif path == "Mask":
         path_dir = "frames/Segmentation/Data/Masks"
     else:
         print("Wrong Path for renaming!")
@@ -135,9 +135,9 @@ def rename_all_files(path=None):
     files_images.sort()
     for count, filename in enumerate(files_images):
         num_ex = regex.findall(filename)
-        if path is "Image":
+        if path == "Image":
             dst = "image_" + num_ex[0] + ".jpg"
-        elif path is "Mask":
+        elif path == "Mask":
             dst = "image_" + str(int(num_ex[0]) - 1) + ".png"
         else:
             print("\nWrong path option ... ")
