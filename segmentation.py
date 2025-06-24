@@ -161,14 +161,13 @@ def segmentation_keras_load():
 
     """ Prediciting mask using the model ... """
     # model_predict = tf.keras.models.load_model("FireSegmentation_fifth.h5")
-    model_predict = tf.keras.models.load_model("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation_fifth.h5")
+    model_predict = tf.keras.models.load_model("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5")
 
     preds_val = model.predict(x_val, verbose=1)
     preds_val_t = (preds_val > 0.5).astype(np.uint8)
 
     """ Plotting a few generated masks from the model and compare them with the Ground Truth Masks ... """
     plot_segmentation_test(xval=x_val, yval=y_val, ypred=preds_val_t, num_samples=6)
-
 
 def model_unet_kaggle(img_hieght, img_width, img_channel, num_classes):
     """
