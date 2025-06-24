@@ -151,7 +151,9 @@ def segmentation_keras_load():
     model = model_unet_kaggle(img_height, img_width, img_channels, num_classes)
     tf.keras.utils.plot_model(model, to_file=model_fig_file, show_shapes=True)
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=METRICS)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint("FireSegmentation.h5", save_best_only=True)
+    # change h5 file storage path.
+    # checkpoint = tf.keras.callbacks.ModelCheckpoint("FireSegmentation.h5", save_best_only=True)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5", save_best_only=True)
     early_stopper = tf.keras.callbacks.EarlyStopping(patience=5)
 
     results = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=epochs, batch_size=batch_size,
