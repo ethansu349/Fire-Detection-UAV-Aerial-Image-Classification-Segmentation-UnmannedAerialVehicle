@@ -26,7 +26,7 @@ Config_classification = {"batch_size": 32, 'Save_Model': True, 'Epochs': 40, "Tr
 # change config for segmentation as you need.
 # config_segmentation = {"batch_size": 16, 'Save_Model': False, 'Epochs': 30, "TrainingPlot": False,
 #                        "train_set_ratio": 0.85, "val_set_ratio": 0.15, "num_class": 2, "CHANNELS": 3}
-config_segmentation = {"batch_size": 16, 'Save_Model': False, 'Epochs': 5, "TrainingPlot": False,
+config_segmentation = {"batch_size": 16, 'Save_Model': False, 'Epochs': 30, "TrainingPlot": False,
                        "train_set_ratio": 0.85, "val_set_ratio": 0.15, "num_class": 2, "CHANNELS": 3}
 # Mode = 'Training'
 Mode = 'Segmentation'
