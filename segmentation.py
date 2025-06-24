@@ -160,7 +160,9 @@ def segmentation_keras_load():
                         callbacks=[early_stopper, checkpoint])
 
     """ Prediciting mask using the model ... """
-    model_predict = tf.keras.models.load_model("FireSegmentation_fifth.h5")
+    # model_predict = tf.keras.models.load_model("FireSegmentation_fifth.h5")
+    model_predict = tf.keras.models.load_model("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation_fifth.h5")
+
     preds_val = model.predict(x_val, verbose=1)
     preds_val_t = (preds_val > 0.5).astype(np.uint8)
 
