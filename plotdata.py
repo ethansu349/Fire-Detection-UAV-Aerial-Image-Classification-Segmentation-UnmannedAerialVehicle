@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 
 
 #########################################################
+
+base_path = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/"
 # Function definition
 
 def plot_training(result, type_model, layers_len):
@@ -68,8 +70,8 @@ def plot_metrics(history):
         ax[n].legend(prop={'size': 14, 'weight': 'bold'}, loc='best')
         ax[n].tick_params(axis='both', which='major', labelsize=15)
 
-    file_figobj = 'Output/FigureObject/Metric_%d_EPOCH.fig.pickle' % epochs
-    file_pdf = 'Output/Figures/Metric_%d_EPOCH.pdf' % epochs
+    file_figobj = base_path + 'Output/FigureObject/Metric_%d_EPOCH.fig.pickle' % epochs
+    file_pdf = base_path + 'Output/Figures/Metric_%d_EPOCH.pdf' % epochs
 
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
@@ -141,8 +143,8 @@ def plot_scheduling():
     ax.legend(loc='best')
     fig.canvas.draw()
 
-    file_figobj = 'Output/FigureObject/required_UAV.fig.pickle' % ()
-    file_pdf = 'Output/Figures/required_UAV.pdf' % ()
+    file_figobj = base_path + 'Output/FigureObject/required_UAV.fig.pickle' % ()
+    file_pdf = base_path + 'Output/Figures/required_UAV.pdf' % ()
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
 
@@ -182,8 +184,8 @@ def plot_interval(pile_times):
     ax.legend(loc='best')
     fig.canvas.draw()
 
-    file_figobj = 'Output/FigureObject/Consecutive_interval.fig.pickle' % ()
-    file_pdf = 'Output/Figures/Consecutive_interval.pdf' % ()
+    file_figobj = base_path + 'Output/FigureObject/Consecutive_interval.fig.pickle' % ()
+    file_pdf = base_path + 'Output/Figures/Consecutive_interval.pdf' % ()
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
 
@@ -210,7 +212,7 @@ def plot_segmentation_test(xval, yval, ypred, num_samples):
         plt.title('Mask')
         plt.axis('off')
     plt.subplots_adjust(wspace=0.05, hspace=0.1)
-    file_figobj = 'Output/FigureObject/segmentation_test.fig.pickle' % ()
-    file_pdf = 'Output/Figures/segmentation_test.pdf' % ()
+    file_figobj = base_path + 'Output/FigureObject/segmentation_test.fig.pickle' % ()
+    file_pdf = base_path + 'Output/Figures/segmentation_test.pdf' % ()
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
