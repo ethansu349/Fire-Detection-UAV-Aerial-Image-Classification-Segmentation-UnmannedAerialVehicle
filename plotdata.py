@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 
 #########################################################
 
-base_path = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/"
+# base_path = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/"
+base_path = "/root/seg_output/"
 # Function definition
 
 def plot_training(result, type_model, layers_len):
