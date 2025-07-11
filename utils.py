@@ -21,6 +21,16 @@ from config import new_size
 #########################################################
 # Function definition
 
+def natural_key(fname: str):
+    """
+    提取文件名中的数字序列并按整数比较，实现自然排序。
+    'image_10.jpg' → [10]
+    'frame12_part3.png' → [12, 3]
+    """
+    return [int(s) if s.isdigit() else s
+            for s in re.split(r'(\d+)', fname)]
+    
+
 def play_vid(path_vid):
     """
     This function plays the imported vide based on the path.
