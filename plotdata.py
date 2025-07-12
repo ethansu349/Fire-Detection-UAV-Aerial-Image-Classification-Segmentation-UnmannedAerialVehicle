@@ -200,7 +200,7 @@ def plot_segmentation_test(xval, yval, ypred, num_samples):
         ix_val = random.randint(0, len(ypred) - 1)
         title = str(i+1)
         plt.title(title)
-        imshow(xval[ix_val])
+        imshow(xval[ix_val][..., :3])
         plt.axis('off')
 
         plt.subplot(3, num_samples, (1 * num_samples) + i + 1)
