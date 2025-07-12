@@ -28,7 +28,7 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose
 from config import config_segmentation
 from config import segmentation_new_size
 from plotdata import plot_segmentation_test
-from utils import natural_key
+from utils import natural_key, resize_npz_5ch
 
 #########################################################
 # Global parameters and definition
@@ -65,6 +65,8 @@ def segmentation_keras_load():
     epochs = config_segmentation.get('Epochs')
     img_channels = config_segmentation.get('CHANNELS')
     num_classes = config_segmentation.get("num_class")
+    merge_mode = config_segmentation.get("Merge_mode")
+    test_mode = config_segmentation.get("Test_mode")
 
     """ Defining the directory of the images and masks """
     # dir_images = "frames/Segmentation/Data/Images"
@@ -73,47 +75,76 @@ def segmentation_keras_load():
     # dir_images = "/content/Seg_Data/Images"
     # dir_masks = "/content/Seg_Data/Masks"
     
-    dir_images = "/root/data/Images"
-    dir_masks = "/root/data/Masks"
+    dir_images = "/root/autodl-tmp/data/Images"
+    dir_masks = "/root/autodl-tmp/data/Masks"
+    # dir_merges = "/root/autodl-tmp/flow_jpg_merged/1280x720downsample"
+    dir_merges = "/root/autodl-tmp/merged_resize/1280to512"
 
     """ Defining the model figure file directory / path"""
     # model_fig_file = 'Output/Model_figure/segmentation_model_u_net.png'
     # model_fig_file = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/segmentation_model_u_net.png"
     model_fig_file = "/root/seg_output/segmentation_model_u_net.png"
 
-
+    
 
     """ Start reading data (Frames and masks) and save them in Numpy array for Training, Validation and Test"""
-    allfiles_image = [fname for fname in tqdm(os.listdir(dir_images)) if fname.endswith(".jpg") and not fname.startswith(".")]
-    allfiles_image.sort(key=natural_key)
-    allfiles_image = [os.path.join(dir_images, fname) for fname in allfiles_image]
+    if merge_mode:
+        print("merge on, input file image now is merged 5ch")
+        allfiles_image = [fname for fname in tqdm(os.listdir(dir_merges)) if fname.endswith(".npz") and not fname.startswith(".")]
+        allfiles_image.sort(key=natural_key)
+        allfiles_image = [os.path.join(dir_merges, fname) for fname in allfiles_image]
+    else:
+        allfiles_image = [fname for fname in tqdm(os.listdir(dir_images)) if fname.endswith(".jpg") and not fname.startswith(".")]
+        allfiles_image.sort(key=natural_key)
+        allfiles_image = [os.path.join(dir_images, fname) for fname in allfiles_image]
     
     allfiles_mask = [fname for fname in tqdm(os.listdir(dir_masks)) if fname.endswith(".png") and not fname.startswith(".")]
     allfiles_mask.sort(key=natural_key)
     allfiles_mask = [os.path.join(dir_masks, fname) for fname in allfiles_mask]
+    print("X number | Mask number: ")
+    print(len(allfiles_image), len(allfiles_mask))
+    if merge_mode:
+        # since flo files always have one file less than original images files, the last frame doesnot have flow result.
+        print("merge on, input mask now is one file less than original")
+        allfiles_mask = allfiles_mask[:-1]
+    print("After merge: X number | Mask number: ")
+    print(len(allfiles_image), len(allfiles_mask)) 
     
     print("Number of samples:", len(allfiles_image))
+    print("Input_path", "|", "Target_path: ")
     for input_path, target_path in tqdm(zip(allfiles_image[:10], allfiles_mask[:10])):
         print(input_path, "|", target_path)
+
+    if test_mode:
+        allfiles_image = allfiles_image[:50]
+        allfiles_mask = allfiles_mask[:50]
+        
     total_samples = len(allfiles_mask)
     train_ratio = config_segmentation.get("train_set_ratio")
     val_samples = int(total_samples * (1 - train_ratio))
     random.Random(1337).shuffle(allfiles_image)
     random.Random(1337).shuffle(allfiles_mask)
+    
     train_img_paths = allfiles_image[:-val_samples]
     train_mask_paths = allfiles_mask[:-val_samples]
     val_img_paths = allfiles_image[-val_samples:]
     val_mask_paths = allfiles_mask[-val_samples:]
 
+    # create nan train and val set variables
     x_train = np.zeros((len(train_img_paths), img_height, img_width, img_channels), dtype=np.uint8)
     y_train = np.zeros((len(train_mask_paths), img_height, img_width, 1), dtype=np.bool_)
-
     x_val = np.zeros((len(val_img_paths), img_height, img_width, img_channels), dtype=np.uint8)
     y_val = np.zeros((len(val_mask_paths), img_height, img_width, 1), dtype=np.bool_)
+    
     print('\nLoading training images: ', len(train_img_paths), 'images ...')
     for n, file_ in tqdm(enumerate(train_img_paths)):
-        img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
+        if merge_mode:
+            # print("merge on, x train resize to 512x512")
+            img = np.load(file_)["rgbuv"]
+        else:
+            img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
         x_train[n] = img
+        x_train[n] = x_train[n] // 255
 
     print('\nLoading training masks: ', len(train_mask_paths), 'masks ...')
     for n, file_ in tqdm(enumerate(train_mask_paths)):
@@ -123,8 +154,13 @@ def segmentation_keras_load():
 
     print('\nLoading test images: ', len(val_img_paths), 'images ...')
     for n, file_ in tqdm(enumerate(val_img_paths)):
-        img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
+        if merge_mode:
+            # print("merge on, x val resize to 512x512")
+            img = np.load(file_)["rgbuv"]
+        else:
+            img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
         x_val[n] = img
+        x_val[n] = x_val[n] // 255
 
     print('\nLoading test masks: ', len(val_mask_paths), 'masks ...')
     for n, file_ in tqdm(enumerate(val_mask_paths)):
@@ -132,11 +168,18 @@ def segmentation_keras_load():
         y_val[n] = np.expand_dims(img, axis=-1)
         # y_val[n] = y_val[n] // 255
 
+    print("----------X_train[0]------------")
+    print(x_train[0])
+    print("--------------------------------")
+    print("----------Y_train[0]------------")
+    print(y_train[0])
+    print("--------------------------------")
+
     """ Plot some random data: frame and mask (gTruth)"""
     idx_rand = random.randint(0, len(train_img_paths))
     plt.figure(figsize=(13, 5))
     plt.subplot(1, 2, 1)
-    plt.imshow(x_train[idx_rand])
+    plt.imshow(x_train[idx_rand][...,:3])
     plt.axis('off')
     plt.subplot(1, 2, 2)
     plt.imshow(np.squeeze(y_train[idx_rand]))
