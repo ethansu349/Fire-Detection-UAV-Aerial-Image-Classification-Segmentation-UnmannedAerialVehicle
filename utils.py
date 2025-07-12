@@ -16,6 +16,8 @@ import os
 import re
 import cv2
 from config import new_size
+import numpy as np
+import tensorflow as tf
 
 
 #########################################################
@@ -30,6 +32,32 @@ def natural_key(fname: str):
     return [int(s) if s.isdigit() else s
             for s in re.split(r'(\d+)', fname)]
     
+def resize_npz_5ch(
+    arr,
+    target_hw: tuple[int, int] = (512, 512),
+    dtype_out=np.float32             # or np.float16 if you prefer
+) -> np.ndarray:
+    """
+    Load a 5-channel 4 K RGB+flow tensor and resize it to `target_hw`.
+    
+    • Scales U (x-flow) and V (y-flow) by the same factors used for resizing.
+    • Uses bilinear interpolation for all channels (adequate for flow too).
+    """
+    # ---------- 1. load -----------------------------------------------------
+    arr = arr.astype(np.float32)                                   # safe math
+    
+    H0, W0 = arr.shape[:2]
+    Ht, Wt = target_hw
+    scale_h, scale_w = Ht / H0, Wt / W0          # ≈ 0.237 and 0.133 for 4 K→512²
+    
+    # ---------- 2. rescale flow magnitudes ---------------------------------
+    arr[..., 3] *= scale_w      # U channel
+    arr[..., 4] *= scale_h      # V channel
+    
+    # ---------- 3. spatial resize  -----------------------------------------
+    arr = tf.image.resize(arr, target_hw, method="bilinear").numpy()
+    
+    return arr.astype(dtype_out)
 
 def play_vid(path_vid):
     """
