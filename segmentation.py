@@ -69,21 +69,18 @@ def segmentation_keras_load():
     test_mode = config_segmentation.get("Test_mode")
 
     """ Defining the directory of the images and masks """
-    # dir_images = "frames/Segmentation/Data/Images"
-    # dir_masks = "frames/Segmentation/Data/Masks"
-
-    # dir_images = "/content/Seg_Data/Images"
-    # dir_masks = "/content/Seg_Data/Masks"
+    # dir_images = "/root/autodl-tmp/data/Images"
+    # dir_masks = "/root/autodl-tmp/data/Masks"
+    # dir_merges = "/root/autodl-tmp/merged_resize/1280to512"
+    dir_images = "/lambda/nfs/fireseg/data/Images"
+    dir_masks = "/lambda/nfs/fireseg/data/Masks"
+    # dir_merges = "/lambda/nfs/fireseg/data/merges"
     
-    dir_images = "/root/autodl-tmp/data/Images"
-    dir_masks = "/root/autodl-tmp/data/Masks"
-    # dir_merges = "/root/autodl-tmp/flow_jpg_merged/1280x720downsample"
-    dir_merges = "/root/autodl-tmp/merged_resize/1280to512"
 
     """ Defining the model figure file directory / path"""
     # model_fig_file = 'Output/Model_figure/segmentation_model_u_net.png'
     # model_fig_file = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/segmentation_model_u_net.png"
-    model_fig_file = "/root/seg_output/segmentation_model_u_net.png"
+    model_fig_file = "/lambda/nfs/fireseg/seg_output/segmentation_model_u_net.png"
 
     
 
@@ -144,7 +141,7 @@ def segmentation_keras_load():
         else:
             img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
         x_train[n] = img
-        x_train[n] = x_train[n] // 255
+        x_train[n] = x_train[n] / 255
 
     print('\nLoading training masks: ', len(train_mask_paths), 'masks ...')
     for n, file_ in tqdm(enumerate(train_mask_paths)):
@@ -160,7 +157,7 @@ def segmentation_keras_load():
         else:
             img = tf.keras.preprocessing.image.load_img(file_, target_size=img_size)
         x_val[n] = img
-        x_val[n] = x_val[n] // 255
+        x_val[n] = x_val[n] / 255
 
     print('\nLoading test masks: ', len(val_mask_paths), 'masks ...')
     for n, file_ in tqdm(enumerate(val_mask_paths)):
@@ -195,7 +192,7 @@ def segmentation_keras_load():
     # change h5 file storage path.
     # checkpoint = tf.keras.callbacks.ModelCheckpoint("FireSegmentation.h5", save_best_only=True)
     # checkpoint = tf.keras.callbacks.ModelCheckpoint("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5", save_best_only=True)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint("/root/seg_output/model_checkpoints/FireSegmentation.h5", save_best_only=True)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint("/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5", save_best_only=True)
 
     
     early_stopper = tf.keras.callbacks.EarlyStopping(patience=5)
@@ -206,7 +203,7 @@ def segmentation_keras_load():
     """ Prediciting mask using the model ... """
     # model_predict = tf.keras.models.load_model("FireSegmentation_fifth.h5")
     # model_predict = tf.keras.models.load_model("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5")
-    model_predict = tf.keras.models.load_model("/root/seg_output/model_checkpoints/FireSegmentation.h5")
+    model_predict = tf.keras.models.load_model("/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5")
     
 
     preds_val = model.predict(x_val, verbose=1)
