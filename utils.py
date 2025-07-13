@@ -61,7 +61,7 @@ def get_paths(server_name):
             # Data paths
             'dir_images': "/lambda/nfs/fireseg/data/Images",
             'dir_masks': "/lambda/nfs/fireseg/data/Masks",
-            'dir_merges': "/lambda/nfs/fireseg/data/merges",
+            'dir_merges': "/lambda/nfs/fireseg/data/512x512merged",
             
             # Output paths with dynamic server_name prefix
             'base_output': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output",
@@ -125,7 +125,8 @@ def natural_key(fname: str):
 def resize_npz_5ch(
     arr,
     target_hw: tuple[int, int] = (512, 512),
-    dtype_out=np.float32             # or np.float16 if you prefer
+    dtype_out=np.float32,             # or np.float16 if you prefer
+    verbose: bool = True
 ) -> np.ndarray:
     """
     Load a 5-channel 4 K RGB+flow tensor and resize it to `target_hw`.
@@ -140,12 +141,31 @@ def resize_npz_5ch(
     Ht, Wt = target_hw
     scale_h, scale_w = Ht / H0, Wt / W0          # ≈ 0.237 and 0.133 for 4 K→512²
     
+    if verbose:
+        # Print flow statistics before scaling
+        flow_u = arr[..., 3]
+        flow_v = arr[..., 4]
+        print(f"  Flow statistics before scaling:")
+        print(f"    U: min={flow_u.min():.2f}, max={flow_u.max():.2f}, mean={flow_u.mean():.2f}")
+        print(f"    V: min={flow_v.min():.2f}, max={flow_v.max():.2f}, mean={flow_v.mean():.2f}")
+    
     # ---------- 2. rescale flow magnitudes ---------------------------------
     arr[..., 3] *= scale_w      # U channel
     arr[..., 4] *= scale_h      # V channel
     
+    if verbose:
+        print(f"  Flow scaling factors: U *= {scale_w:.3f}, V *= {scale_h:.3f}")
+    
     # ---------- 3. spatial resize  -----------------------------------------
     arr = tf.image.resize(arr, target_hw, method="bilinear").numpy()
+    
+    if verbose:
+        # Print flow statistics after scaling
+        flow_u_scaled = arr[..., 3]
+        flow_v_scaled = arr[..., 4]
+        print(f"  Flow statistics after scaling:")
+        print(f"    U: min={flow_u_scaled.min():.2f}, max={flow_u_scaled.max():.2f}, mean={flow_u_scaled.mean():.2f}")
+        print(f"    V: min={flow_v_scaled.min():.2f}, max={flow_v_scaled.max():.2f}, mean={flow_v_scaled.mean():.2f}")
     
     return arr.astype(dtype_out)
 
