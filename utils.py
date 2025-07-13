@@ -41,20 +41,20 @@ def get_paths(server_name):
             'dir_merges': "/root/autodl-tmp/merged_resize/1280to512",
             
             # Output paths with dynamic server_name prefix
-            'base_output': f"{server_name}_Output",
-            'model_fig_file': f"{server_name}_Output/Model_figure/segmentation_model_u_net.png",
-            'checkpoint': f"{server_name}_Output/Models/FireSegmentation.h5",
+            'base_output': f"/root/autodl-tmp/seg_output/{server_name}_Output",
+            'model_fig_file': f"/root/autodl-tmp/seg_output/{server_name}_Output/Model_figure/segmentation_model_u_net.png",
+            'checkpoint': f"/root/autodl-tmp/seg_output/{server_name}_Output/Models/FireSegmentation.h5",
             
-            # Classification model paths
-            'classification_models': f"{server_name}_Output/Models/",
-            'classification_h5_models': f"{server_name}_Output/Models/h5model/",
+            # # Classification model paths
+            # 'classification_models': f"/root/autodl-tmp/{server_name}_Output/Models/",
+            # 'classification_h5_models': f"/root/autodl-tmp/{server_name}_Output/Models/h5model/",
             
             # Plot output base
-            'plot_base': "",
+            'plot_base': "/root/autodl-tmp/seg_output/",
             
             # Figure output paths
-            'figure_output': f"{server_name}_Output/Figures/",
-            'figure_object': f"{server_name}_Output/FigureObject/"
+            'figure_output': f"/root/autodl-tmp/seg_output/{server_name}_Output/Figures/",
+            'figure_object': f"/root/autodl-tmp/seg_output/{server_name}_Output/FigureObject/"
         }
     elif server_name == "lambda":
         paths = {
@@ -68,9 +68,9 @@ def get_paths(server_name):
             'model_fig_file': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/segmentation_model_u_net.png",
             'checkpoint': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/model_checkpoints/FireSegmentation.h5",
             
-            # Classification model paths
-            'classification_models': f"{server_name}_Output/Models/",
-            'classification_h5_models': f"{server_name}_Output/Models/h5model/",
+            # # Classification model paths
+            # 'classification_models': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/Models/",
+            # 'classification_h5_models': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/Models/h5model/",
             
             # Plot output base
             'plot_base': "/lambda/nfs/fireseg/seg_output/",
