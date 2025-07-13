@@ -10,7 +10,7 @@ import random
 import pickle
 import itertools
 import numpy as np
-from skimage.io import imshow
+# from skimage.io import imshow  # Deprecated, using matplotlib.pyplot.imshow instead
 import matplotlib.pyplot as plt
 
 from config import server_name
@@ -206,7 +206,7 @@ def plot_segmentation_test(xval, yval, ypred, num_samples):
         ix_val = random.randint(0, len(ypred) - 1)
         title = str(i+1)
         plt.title(title)
-        imshow(xval[ix_val])
+        plt.imshow(xval[ix_val][..., :3])  # Only show RGB channels for 5-channel data
         plt.axis('off')
 
         plt.subplot(3, num_samples, (1 * num_samples) + i + 1)
