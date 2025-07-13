@@ -25,10 +25,9 @@ from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Dropout, Lambda
 from tensorflow.keras.layers import Conv2D, Conv2DTranspose
 
-from config import config_segmentation
-from config import segmentation_new_size
+from config import config_segmentation, segmentation_new_size, server_name
 from plotdata import plot_segmentation_test
-from utils import natural_key, resize_npz_5ch
+from utils import natural_key, resize_npz_5ch, get_paths
 
 #########################################################
 # Global parameters and definition
@@ -198,19 +197,16 @@ def segmentation_keras_load():
     if merge_mode and config_segmentation.get('flow_stats_path'):
         config_segmentation['flow_stats'] = load_flow_stats(config_segmentation['flow_stats_path'])
 
-    """ Defining the directory of the images and masks """
-    # dir_images = "/root/autodl-tmp/data/Images"
-    # dir_masks = "/root/autodl-tmp/data/Masks"
-    # dir_merges = "/root/autodl-tmp/merged_resize/1280to512"
-    dir_images = "/lambda/nfs/fireseg/data/Images"
-    dir_masks = "/lambda/nfs/fireseg/data/Masks"
-    # dir_merges = "/lambda/nfs/fireseg/data/merges"
+    # Get paths based on server configuration
+    paths = get_paths(server_name)
     
-
+    """ Defining the directory of the images and masks """
+    dir_images = paths['dir_images']
+    dir_masks = paths['dir_masks']
+    dir_merges = paths['dir_merges']
+    
     """ Defining the model figure file directory / path"""
-    # model_fig_file = 'Output/Model_figure/segmentation_model_u_net.png'
-    # model_fig_file = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/segmentation_model_u_net.png"
-    model_fig_file = "/lambda/nfs/fireseg/seg_output/segmentation_model_u_net.png"
+    model_fig_file = paths['model_fig_file']
 
     
 
@@ -352,9 +348,8 @@ def segmentation_keras_load():
     tf.keras.utils.plot_model(model, to_file=model_fig_file, show_shapes=True)
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=METRICS)
     # change h5 file storage path.
-    # checkpoint = tf.keras.callbacks.ModelCheckpoint("FireSegmentation.h5", save_best_only=True)
-    # checkpoint = tf.keras.callbacks.ModelCheckpoint("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5", save_best_only=True)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint("/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5", save_best_only=True)
+    # change h5 file storage path based on server configuration
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(paths['checkpoint'], save_best_only=True)
 
     
     early_stopper = tf.keras.callbacks.EarlyStopping(patience=5)
@@ -364,8 +359,8 @@ def segmentation_keras_load():
 
     """ Prediciting mask using the model ... """
     # model_predict = tf.keras.models.load_model("FireSegmentation_fifth.h5")
-    # model_predict = tf.keras.models.load_model("/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/Models/FireSegmentation.h5")
-    model_predict = tf.keras.models.load_model("/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5")
+    # Load model from the configured checkpoint path
+    model_predict = tf.keras.models.load_model(paths['checkpoint'])
     
 
     preds_val = model.predict(x_val, verbose=1)

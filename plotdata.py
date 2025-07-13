@@ -13,11 +13,14 @@ import numpy as np
 from skimage.io import imshow
 import matplotlib.pyplot as plt
 
+from config import server_name
+from utils import get_paths
 
 #########################################################
 
-# base_path = "/content/drive/MyDrive/Colab_Proj_Current/Fire_OF_proj/fire_data/FLAME_Seg/"
-base_path = "/lambda/nfs/fireseg/seg_output/"
+# Get paths based on server configuration
+paths = get_paths(server_name)
+base_path = paths['plot_base']
 # Function definition
 
 def plot_training(result, type_model, layers_len):
@@ -46,8 +49,8 @@ def plot_training(result, type_model, layers_len):
     ax[1].grid(True)
     ax[1].legend(prop={'size': 14, 'weight': 'bold'}, loc='best')
     ax[1].tick_params(axis='both', which='major', labelsize=15)
-    file_figobj = 'Output/FigureObject/%s_%d_EPOCH_%d_layers_opt.fig.pickle' % (type_model, epochs, layers_len)
-    file_pdf = 'Output/Figures/%s_%d_EPOCH_%d_layers_opt.pdf' % (type_model, epochs, layers_len)
+    file_figobj = paths['figure_object'] + '%s_%d_EPOCH_%d_layers_opt.fig.pickle' % (type_model, epochs, layers_len)
+    file_pdf = paths['figure_output'] + '%s_%d_EPOCH_%d_layers_opt.pdf' % (type_model, epochs, layers_len)
 
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
@@ -71,8 +74,8 @@ def plot_metrics(history):
         ax[n].legend(prop={'size': 14, 'weight': 'bold'}, loc='best')
         ax[n].tick_params(axis='both', which='major', labelsize=15)
 
-    file_figobj = base_path + 'Output/FigureObject/Metric_%d_EPOCH.fig.pickle' % epochs
-    file_pdf = base_path + 'Output/Figures/Metric_%d_EPOCH.pdf' % epochs
+    file_figobj = paths['figure_object'] + 'Metric_%d_EPOCH.fig.pickle' % epochs
+    file_pdf = paths['figure_output'] + 'Metric_%d_EPOCH.pdf' % epochs
 
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
@@ -106,7 +109,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.ylabel('True label', size=12, fontweight='bold')
     plt.xlabel('Predicted label', size=12, fontweight='bold')
     # file_pdf = 'Output/Figures/confusion_matrix.pdf'
-    file_figobj = 'Output/FigureObject/confusion_matrix.fig.pickle'
+    file_figobj = paths['figure_object'] + 'confusion_matrix.fig.pickle'
     pickle.dump(fig_conf, open(file_figobj, 'wb'))
 
 
@@ -144,8 +147,8 @@ def plot_scheduling():
     ax.legend(loc='best')
     fig.canvas.draw()
 
-    file_figobj = base_path + 'Output/FigureObject/required_UAV.fig.pickle' % ()
-    file_pdf = base_path + 'Output/Figures/required_UAV.pdf' % ()
+    file_figobj = paths['figure_object'] + 'required_UAV.fig.pickle'
+    file_pdf = paths['figure_output'] + 'required_UAV.pdf'
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
 
@@ -185,8 +188,8 @@ def plot_interval(pile_times):
     ax.legend(loc='best')
     fig.canvas.draw()
 
-    file_figobj = base_path + 'Output/FigureObject/Consecutive_interval.fig.pickle' % ()
-    file_pdf = base_path + 'Output/Figures/Consecutive_interval.pdf' % ()
+    file_figobj = paths['figure_object'] + 'Consecutive_interval.fig.pickle'
+    file_pdf = paths['figure_output'] + 'Consecutive_interval.pdf'
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')
 
@@ -213,7 +216,7 @@ def plot_segmentation_test(xval, yval, ypred, num_samples):
         plt.title('Mask')
         plt.axis('off')
     plt.subplots_adjust(wspace=0.05, hspace=0.1)
-    file_figobj = base_path + 'Output/FigureObject/segmentation_test.fig.pickle' % ()
-    file_pdf = base_path + 'Output/Figures/segmentation_test.pdf' % ()
+    file_figobj = paths['figure_object'] + 'segmentation_test.fig.pickle'
+    file_pdf = paths['figure_output'] + 'segmentation_test.pdf'
     pickle.dump(fig, open(file_figobj, 'wb'))
     fig.savefig(file_pdf, bbox_inches='tight')

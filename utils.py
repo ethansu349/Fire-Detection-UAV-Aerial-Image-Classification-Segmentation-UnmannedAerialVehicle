@@ -15,13 +15,74 @@ Util functions such as
 import os
 import re
 import cv2
-from config import new_size
+from config import new_size, server_name
 import numpy as np
 import tensorflow as tf
 
 
 #########################################################
 # Function definition
+
+def get_paths(server_name):
+    """
+    Get all paths based on server configuration.
+    
+    Args:
+        server_name: "autodl" or "lambda"
+    
+    Returns:
+        Dictionary containing all paths for the specified server
+    """
+    if server_name == "autodl":
+        paths = {
+            # Data paths
+            'dir_images': "/root/autodl-tmp/data/Images",
+            'dir_masks': "/root/autodl-tmp/data/Masks", 
+            'dir_merges': "/root/autodl-tmp/merged_resize/1280to512",
+            
+            # Output paths
+            'base_output': "Output",
+            'model_fig_file': "Output/Model_figure/segmentation_model_u_net.png",
+            'checkpoint': "Output/Models/FireSegmentation.h5",
+            
+            # Classification model paths
+            'classification_models': "Output/Models/",
+            'classification_h5_models': "Output/Models/h5model/",
+            
+            # Plot output base
+            'plot_base': "",
+            
+            # Figure output paths
+            'figure_output': "Output/Figures/",
+            'figure_object': "Output/FigureObject/"
+        }
+    elif server_name == "lambda":
+        paths = {
+            # Data paths
+            'dir_images': "/lambda/nfs/fireseg/data/Images",
+            'dir_masks': "/lambda/nfs/fireseg/data/Masks",
+            'dir_merges': "/lambda/nfs/fireseg/data/merges",
+            
+            # Output paths
+            'base_output': "/lambda/nfs/fireseg/seg_output",
+            'model_fig_file': "/lambda/nfs/fireseg/seg_output/segmentation_model_u_net.png",
+            'checkpoint': "/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5",
+            
+            # Classification model paths
+            'classification_models': "Output/Models/",
+            'classification_h5_models': "Output/Models/h5model/",
+            
+            # Plot output base
+            'plot_base': "/lambda/nfs/fireseg/seg_output/",
+            
+            # Figure output paths
+            'figure_output': "/lambda/nfs/fireseg/seg_output/Output/Figures/",
+            'figure_object': "/lambda/nfs/fireseg/seg_output/Output/FigureObject/"
+        }
+    else:
+        raise ValueError(f"Unknown server_name: {server_name}. Use 'autodl' or 'lambda'")
+    
+    return paths
 
 def natural_key(fname: str):
     """

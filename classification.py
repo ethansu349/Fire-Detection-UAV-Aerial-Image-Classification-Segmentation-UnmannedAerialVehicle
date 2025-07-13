@@ -16,8 +16,8 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 from plotdata import plot_confusion_matrix
-from config import Config_classification
-from config import new_size
+from config import Config_classification, new_size, server_name
+from utils import get_paths
 
 batch_size = Config_classification.get('batch_size')
 image_size = (new_size.get('width'), new_size.get('height'))
@@ -33,15 +33,18 @@ def classify():
     data set.
     :return: None, Plot the Confusion matrix for the test data on the binary classification
     """
+    # Get paths based on server configuration
+    paths = get_paths(server_name)
+    
     test_ds = tf.keras.preprocessing.image_dataset_from_directory(
         "frames/Test", seed=1337, image_size=image_size, batch_size=batch_size, shuffle=True
     )
 
-    model_fire = load_model('Output/Models/model_fire_resnet_not_weighted_40_no_metric_simple')
+    model_fire = load_model(paths['classification_models'] + 'model_fire_resnet_not_weighted_40_no_metric_simple')
 
     _ = model_fire.evaluate(test_ds, batch_size=batch_size)
 
-    best_model_fire = load_model('Output/Models/h5model/keras/save_at_25.h5')
+    best_model_fire = load_model(paths['classification_h5_models'] + 'keras/save_at_25.h5')
     results_eval = best_model_fire.evaluate(test_ds, batch_size=batch_size)
 
     for name, value in zip(model_fire.metrics_names, results_eval):
@@ -52,7 +55,7 @@ def classify():
     cm_plot_labels = ['Fire', 'No Fire']
     plot_confusion_matrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix')
 
-    model_file = 'Output/Models/h5model/Keras_not_weighted_40_no_metric_simple/save_at_%d.h5' % 37
+    model_file = paths['classification_h5_models'] + 'Keras_not_weighted_40_no_metric_simple/save_at_%d.h5' % 37
     model_fire = load_model(model_file)
     test_fire_ds = tf.keras.preprocessing.image_dataset_from_directory(
         "frames/confusion_test/Fire_test", seed=1337, image_size=image_size, batch_size=batch_size, shuffle=True)

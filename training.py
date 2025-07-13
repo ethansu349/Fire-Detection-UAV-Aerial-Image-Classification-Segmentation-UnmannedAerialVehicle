@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 from tensorflow.keras import layers
 
 
-from config import new_size
+from config import new_size, Config_classification, server_name
 from plotdata import plot_training
-from config import Config_classification
+from utils import get_paths
 
 #########################################################
 # Global parameters and definition
@@ -67,6 +67,9 @@ def train_keras():
     # https://keras.io/examples/vision/image_classification_from_scratch/
     print(" --------- Training --------- ")
 
+    # Get paths based on server configuration
+    paths = get_paths(server_name)
+    
     '''
     change directory according to your project structure
     '''
@@ -123,7 +126,7 @@ def train_keras():
     layers_len = len(model.layers)
 
     if save_model_flag:
-        file_model_fire = 'Output/Models/model_fire_resnet_weighted_40_no_metric_simple'
+        file_model_fire = paths['classification_models'] + 'model_fire_resnet_weighted_40_no_metric_simple'
         model.save(file_model_fire)
     if Config_classification.get('TrainingPlot'):
         plot_training(res_fire, 'KerasModel', layers_len)
