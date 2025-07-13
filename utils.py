@@ -40,21 +40,21 @@ def get_paths(server_name):
             'dir_masks': "/root/autodl-tmp/data/Masks", 
             'dir_merges': "/root/autodl-tmp/merged_resize/1280to512",
             
-            # Output paths
-            'base_output': "Output",
-            'model_fig_file': "Output/Model_figure/segmentation_model_u_net.png",
-            'checkpoint': "Output/Models/FireSegmentation.h5",
+            # Output paths with dynamic server_name prefix
+            'base_output': f"{server_name}_Output",
+            'model_fig_file': f"{server_name}_Output/Model_figure/segmentation_model_u_net.png",
+            'checkpoint': f"{server_name}_Output/Models/FireSegmentation.h5",
             
             # Classification model paths
-            'classification_models': "Output/Models/",
-            'classification_h5_models': "Output/Models/h5model/",
+            'classification_models': f"{server_name}_Output/Models/",
+            'classification_h5_models': f"{server_name}_Output/Models/h5model/",
             
             # Plot output base
             'plot_base': "",
             
             # Figure output paths
-            'figure_output': "Output/Figures/",
-            'figure_object': "Output/FigureObject/"
+            'figure_output': f"{server_name}_Output/Figures/",
+            'figure_object': f"{server_name}_Output/FigureObject/"
         }
     elif server_name == "lambda":
         paths = {
@@ -63,26 +63,55 @@ def get_paths(server_name):
             'dir_masks': "/lambda/nfs/fireseg/data/Masks",
             'dir_merges': "/lambda/nfs/fireseg/data/merges",
             
-            # Output paths
-            'base_output': "/lambda/nfs/fireseg/seg_output",
-            'model_fig_file': "/lambda/nfs/fireseg/seg_output/segmentation_model_u_net.png",
-            'checkpoint': "/lambda/nfs/fireseg/seg_output/model_checkpoints/FireSegmentation.h5",
+            # Output paths with dynamic server_name prefix
+            'base_output': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output",
+            'model_fig_file': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/segmentation_model_u_net.png",
+            'checkpoint': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/model_checkpoints/FireSegmentation.h5",
             
             # Classification model paths
-            'classification_models': "Output/Models/",
-            'classification_h5_models': "Output/Models/h5model/",
+            'classification_models': f"{server_name}_Output/Models/",
+            'classification_h5_models': f"{server_name}_Output/Models/h5model/",
             
             # Plot output base
             'plot_base': "/lambda/nfs/fireseg/seg_output/",
             
             # Figure output paths
-            'figure_output': "/lambda/nfs/fireseg/seg_output/Output/Figures/",
-            'figure_object': "/lambda/nfs/fireseg/seg_output/Output/FigureObject/"
+            'figure_output': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/Figures/",
+            'figure_object': f"/lambda/nfs/fireseg/seg_output/{server_name}_Output/FigureObject/"
         }
     else:
         raise ValueError(f"Unknown server_name: {server_name}. Use 'autodl' or 'lambda'")
     
     return paths
+
+
+def ensure_directories(server_name):
+    """
+    Ensure all necessary directories exist for the given server configuration.
+    
+    Args:
+        server_name: Server name to get paths for
+    """
+    paths = get_paths(server_name)
+    
+    # Extract directory paths from file paths
+    directories_to_create = set()
+    
+    # Add directories from paths that end with /
+    for key, path in paths.items():
+        if path.endswith('/'):
+            directories_to_create.add(path)
+        else:
+            # For file paths, extract the directory
+            dir_path = os.path.dirname(path)
+            if dir_path:
+                directories_to_create.add(dir_path)
+    
+    # Create directories
+    for directory in directories_to_create:
+        os.makedirs(directory, exist_ok=True)
+        print(f"Ensured directory exists: {directory}")
+
 
 def natural_key(fname: str):
     """

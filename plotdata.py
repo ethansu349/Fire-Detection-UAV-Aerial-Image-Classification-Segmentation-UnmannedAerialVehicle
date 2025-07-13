@@ -14,7 +14,7 @@ from skimage.io import imshow
 import matplotlib.pyplot as plt
 
 from config import server_name
-from utils import get_paths
+from utils import get_paths, ensure_directories
 
 #########################################################
 
@@ -24,6 +24,9 @@ base_path = paths['plot_base']
 # Function definition
 
 def plot_training(result, type_model, layers_len):
+    # Ensure directories exist before saving
+    ensure_directories(server_name)
+    
     (fig, ax) = plt.subplots(2, 1, figsize=(13, 13))
     epochs = len(result.history['accuracy'])
     ax[0].set_title("Loss", fontsize=14, fontweight='bold')

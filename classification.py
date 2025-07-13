@@ -17,7 +17,7 @@ from tensorflow.keras.models import load_model
 
 from plotdata import plot_confusion_matrix
 from config import Config_classification, new_size, server_name
-from utils import get_paths
+from utils import get_paths, ensure_directories
 
 batch_size = Config_classification.get('batch_size')
 image_size = (new_size.get('width'), new_size.get('height'))
@@ -35,6 +35,9 @@ def classify():
     """
     # Get paths based on server configuration
     paths = get_paths(server_name)
+    
+    # Ensure all output directories exist
+    ensure_directories(server_name)
     
     test_ds = tf.keras.preprocessing.image_dataset_from_directory(
         "frames/Test", seed=1337, image_size=image_size, batch_size=batch_size, shuffle=True

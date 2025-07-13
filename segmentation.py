@@ -27,7 +27,7 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose
 
 from config import config_segmentation, segmentation_new_size, server_name
 from plotdata import plot_segmentation_test
-from utils import natural_key, resize_npz_5ch, get_paths
+from utils import natural_key, resize_npz_5ch, get_paths, ensure_directories
 
 #########################################################
 # Global parameters and definition
@@ -199,6 +199,9 @@ def segmentation_keras_load():
 
     # Get paths based on server configuration
     paths = get_paths(server_name)
+    
+    # Ensure all output directories exist
+    ensure_directories(server_name)
     
     """ Defining the directory of the images and masks """
     dir_images = paths['dir_images']

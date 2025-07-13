@@ -22,7 +22,7 @@ from tensorflow.keras import layers
 
 from config import new_size, Config_classification, server_name
 from plotdata import plot_training
-from utils import get_paths
+from utils import get_paths, ensure_directories
 
 #########################################################
 # Global parameters and definition
@@ -69,6 +69,9 @@ def train_keras():
 
     # Get paths based on server configuration
     paths = get_paths(server_name)
+    
+    # Ensure all output directories exist
+    ensure_directories(server_name)
     
     '''
     change directory according to your project structure
