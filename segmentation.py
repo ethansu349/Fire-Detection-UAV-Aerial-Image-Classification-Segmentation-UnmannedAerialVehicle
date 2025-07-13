@@ -263,12 +263,56 @@ def segmentation_keras_load():
     y_val = np.zeros((len(val_mask_paths), img_height, img_width, 1), dtype=np.bool_)
     
     print('\nLoading training images: ', len(train_img_paths), 'images ...')
+    
+    # Initialize resize parameters (only used in merge mode)
+    need_resize = False
+    resize_params = None
+    
+    if merge_mode and len(train_img_paths) > 0:
+        # Check the first NPZ file to determine if resizing is needed
+        first_rgbuv = np.load(train_img_paths[0])["rgbuv"]
+        original_h, original_w = first_rgbuv.shape[:2]
+        target_h, target_w = img_height, img_width
+        
+        print(f"\n[NPZ Resolution Check]")
+        print(f"  Sample file: {os.path.basename(train_img_paths[0])}")
+        print(f"  Original resolution: {original_w}x{original_h} (W x H)")
+        print(f"  Target resolution:   {target_w}x{target_h} (W x H)")
+        
+        if (original_h, original_w) != (target_h, target_w):
+            need_resize = True
+            scale_h = target_h / original_h
+            scale_w = target_w / original_w
+            
+            if scale_h < 1 or scale_w < 1:
+                print(f"  Action: All files will be DOWNSCALED by {scale_w:.3f}x (width) and {scale_h:.3f}x (height)")
+            else:
+                print(f"  Action: All files will be UPSCALED by {scale_w:.3f}x (width) and {scale_h:.3f}x (height)")
+            
+            resize_params = {
+                'target_hw': (target_h, target_w),
+                'scale_h': scale_h,
+                'scale_w': scale_w,
+                'is_downscale': scale_h < 1 or scale_w < 1
+            }
+        else:
+            print(f"  Action: NO RESIZE NEEDED - already at target resolution")
+    
+    # Process all training images
     for n, file_ in tqdm(enumerate(train_img_paths)):
         if merge_mode:
-            # print("merge on, x train resize to 512x512")
-            rgbuv = np.load(file_)["rgbuv"]
-            # RGB channels are already in [0, 1] range from concate_flow_jpg.py
-            # Flow channels need normalization based on config
+            if n == 0 and need_resize:
+                # First file was already loaded, reuse it
+                rgbuv = first_rgbuv
+            else:
+                rgbuv = np.load(file_)["rgbuv"]
+            
+            # Apply resize if needed (using pre-calculated parameters)
+            if need_resize:
+                # Only show detailed stats for the first file
+                rgbuv = resize_npz_5ch(rgbuv, resize_params['target_hw'], verbose=(n==0))
+            
+            # Continue with existing normalization logic
             rgb = rgbuv[..., :3]  # Already in [0, 1]
             flow = rgbuv[..., 3:]  # Raw flow values
             
@@ -295,12 +339,18 @@ def segmentation_keras_load():
         # y_train[n] = y_train[n] // 255
 
     print('\nLoading test images: ', len(val_img_paths), 'images ...')
+    
+    # Process validation images using the same resize parameters as training
     for n, file_ in tqdm(enumerate(val_img_paths)):
         if merge_mode:
-            # print("merge on, x val resize to 512x512")
             rgbuv = np.load(file_)["rgbuv"]
-            # RGB channels are already in [0, 1] range from concate_flow_jpg.py
-            # Flow channels need normalization based on config
+            
+            # Apply resize if needed (using same parameters from training set)
+            if need_resize:
+                # Don't show verbose output for validation set
+                rgbuv = resize_npz_5ch(rgbuv, resize_params['target_hw'], verbose=False)
+            
+            # Continue with existing normalization logic
             rgb = rgbuv[..., :3]  # Already in [0, 1]
             flow = rgbuv[..., 3:]  # Raw flow values
             
@@ -326,6 +376,22 @@ def segmentation_keras_load():
         y_val[n] = np.expand_dims(img, axis=-1)
         # y_val[n] = y_val[n] // 255
 
+    # Print resize summary if merge mode is enabled and resizing was needed
+    if merge_mode and need_resize:
+        print(f"\n{'='*60}")
+        print(f"[NPZ RESIZE SUMMARY]")
+        print(f"{'='*60}")
+        total_files = len(train_img_paths) + len(val_img_paths)
+        print(f"Total NPZ files processed: {total_files}")
+        print(f"All files resized from {original_w}x{original_h} to {target_w}x{target_h}")
+        if resize_params['is_downscale']:
+            print(f"Resize type: DOWNSCALE by {resize_params['scale_w']:.3f}x (width) and {resize_params['scale_h']:.3f}x (height)")
+        else:
+            print(f"Resize type: UPSCALE by {resize_params['scale_w']:.3f}x (width) and {resize_params['scale_h']:.3f}x (height)")
+        print(f"  - Training set: {len(train_img_paths)} files")
+        print(f"  - Validation set: {len(val_img_paths)} files")
+        print(f"{'='*60}\n")
+    
     print("----------X_train[0]------------")
     print(x_train[0])
     print("--------------------------------")
