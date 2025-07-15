@@ -24,57 +24,18 @@ from tensorflow.keras.layers import concatenate
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Dropout, Lambda
 from tensorflow.keras.layers import Conv2D, Conv2DTranspose
+from tensorflow.keras import optimizers
 
 from config import config_segmentation, segmentation_new_size, server_name
 from plotdata import plot_segmentation_test
-from utils import natural_key, resize_npz_5ch, get_paths, ensure_directories
+from utils import natural_key, resize_npz_5ch, get_paths, ensure_directories, BinaryIoU, F1Score, Specificity
 
 #########################################################
 # Global parameters and definition
 
-class BinaryIoU(tf.keras.metrics.Metric):
-    """Custom Binary IoU metric that properly handles probability outputs."""
-    
-    def __init__(self, threshold=0.5, name='binary_iou', **kwargs):
-        super(BinaryIoU, self).__init__(name=name, **kwargs)
-        self.threshold = threshold
-        self.true_positives = self.add_weight(name='tp', initializer='zeros')
-        self.false_positives = self.add_weight(name='fp', initializer='zeros')
-        self.false_negatives = self.add_weight(name='fn', initializer='zeros')
-    
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Updates the state variables."""
-        # Threshold predictions to get binary values
-        y_pred_binary = tf.cast(y_pred > self.threshold, tf.float32)
-        y_true = tf.cast(y_true, tf.float32)
-        
-        # Calculate TP, FP, FN
-        true_positives = tf.reduce_sum(y_true * y_pred_binary)
-        false_positives = tf.reduce_sum((1 - y_true) * y_pred_binary)
-        false_negatives = tf.reduce_sum(y_true * (1 - y_pred_binary))
-        
-        # Update state
-        self.true_positives.assign_add(true_positives)
-        self.false_positives.assign_add(false_positives)
-        self.false_negatives.assign_add(false_negatives)
-    
-    def result(self):
-        """Computes and returns the IoU metric."""
-        denominator = self.true_positives + self.false_positives + self.false_negatives
-        # Avoid division by zero
-        denominator = tf.maximum(denominator, tf.keras.backend.epsilon())
-        return self.true_positives / denominator
-    
-    def reset_state(self):
-        """Resets all the state variables."""
-        self.true_positives.assign(0.)
-        self.false_positives.assign(0.)
-        self.false_negatives.assign(0.)
-
-
 METRICS = [
     tf.keras.metrics.AUC(name='auc'),
-    tf.keras.metrics.Recall(name='recall'),
+    tf.keras.metrics.Recall(name='recall'),  # This is Sensitivity
     tf.keras.metrics.TruePositives(name='tp'),
     tf.keras.metrics.TrueNegatives(name='tn'),
     tf.keras.metrics.FalsePositives(name='fp'),
@@ -84,6 +45,8 @@ METRICS = [
     tf.keras.metrics.MeanIoU(num_classes=2, name='iou'),
     BinaryIoU(name='binary_iou'),  # Custom binary IoU with thresholding
     tf.keras.metrics.BinaryAccuracy(name='bin_accuracy'),
+    F1Score(name='f1_score'),  # F1 Score (harmonic mean of precision and recall)
+    Specificity(name='specificity'),  # Specificity (TN / (TN + FP))
 ]
 
 
@@ -151,27 +114,43 @@ def load_flow_stats(stats_path):
         except:
             df = pd.read_csv(stats_path)
         
-        # Extract statistics for U and V channels
-        # Assuming the stats file has columns for u and v statistics
+        # The flow_stats.py generates columns like 'u_mean', 'u_std', 'v_mean', 'v_std' etc.
+        # We need to calculate global statistics across all files
+        
+        # Calculate global statistics
+        # For mean: average of all per-file means
+        # For std: pooled standard deviation
+        # For min/max: global min/max across all files
+        
+        u_mean_global = df['u_mean'].mean()
+        v_mean_global = df['v_mean'].mean()
+        
+        # Pooled standard deviation (assuming equal sample sizes)
+        u_std_global = np.sqrt(df['u_std'].pow(2).mean())
+        v_std_global = np.sqrt(df['v_std'].pow(2).mean())
+        
+        u_min_global = df['u_min'].min()
+        u_max_global = df['u_max'].max()
+        v_min_global = df['v_min'].min()
+        v_max_global = df['v_max'].max()
+        
         stats = {
-            'mean': np.array([df.loc[df['Unnamed: 0'] == 'u', 'mean'].values[0],
-                            df.loc[df['Unnamed: 0'] == 'v', 'mean'].values[0]]),
-            'std': np.array([df.loc[df['Unnamed: 0'] == 'u', 'std'].values[0],
-                           df.loc[df['Unnamed: 0'] == 'v', 'std'].values[0]]),
-            'min': np.array([df.loc[df['Unnamed: 0'] == 'u', 'min'].values[0],
-                           df.loc[df['Unnamed: 0'] == 'v', 'min'].values[0]]),
-            'max': np.array([df.loc[df['Unnamed: 0'] == 'u', 'max'].values[0],
-                           df.loc[df['Unnamed: 0'] == 'v', 'max'].values[0]])
+            'mean': np.array([u_mean_global, v_mean_global]),
+            'std': np.array([u_std_global, v_std_global]),
+            'min': np.array([u_min_global, v_min_global]),
+            'max': np.array([u_max_global, v_max_global])
         }
         
         print(f"Loaded flow statistics from {stats_path}")
-        print(f"Flow U - mean: {stats['mean'][0]:.3f}, std: {stats['std'][0]:.3f}, range: [{stats['min'][0]:.3f}, {stats['max'][0]:.3f}]")
-        print(f"Flow V - mean: {stats['mean'][1]:.3f}, std: {stats['std'][1]:.3f}, range: [{stats['min'][1]:.3f}, {stats['max'][1]:.3f}]")
+        print(f"  Processed {len(df)} flow files")
+        print(f"  Flow U - mean: {stats['mean'][0]:.3f}, std: {stats['std'][0]:.3f}, range: [{stats['min'][0]:.3f}, {stats['max'][0]:.3f}]")
+        print(f"  Flow V - mean: {stats['mean'][1]:.3f}, std: {stats['std'][1]:.3f}, range: [{stats['min'][1]:.3f}, {stats['max'][1]:.3f}]")
         
         return stats
     
     except Exception as e:
         print(f"Warning: Could not load flow statistics from {stats_path}: {e}")
+        print(f"  Expected columns: u_mean, u_std, u_min, u_max, v_mean, v_std, v_min, v_max")
         return None
 
 
@@ -416,6 +395,7 @@ def segmentation_keras_load():
     model = model_unet_kaggle(img_height, img_width, img_channels, num_classes)
     tf.keras.utils.plot_model(model, to_file=model_fig_file, show_shapes=True)
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=METRICS)
+    # model.compile(optimizer=optimizers.Adam(1e-4), loss="binary_crossentropy", metrics=METRICS)
     # change h5 file storage path.
     # change h5 file storage path based on server configuration
     checkpoint = tf.keras.callbacks.ModelCheckpoint(paths['checkpoint'], save_best_only=True)
