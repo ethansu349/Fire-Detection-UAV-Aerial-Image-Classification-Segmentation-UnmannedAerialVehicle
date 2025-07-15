@@ -6,6 +6,7 @@ Util functions such as
     3) Extracting Frames
     4) Resizing frames
     5) Renaming files of a directory
+    6) Custom metrics for segmentation
 #################################
 """
 
@@ -294,3 +295,137 @@ def rename_all_files(path=None):
         src = path_dir + '/' + filename
         os.rename(src, dst)
         print("count = ", count)
+
+
+#########################################################
+# Custom Metrics for Segmentation
+
+class BinaryIoU(tf.keras.metrics.Metric):
+    """Custom Binary IoU metric that properly handles probability outputs."""
+    
+    def __init__(self, threshold=0.5, name='binary_iou', **kwargs):
+        super(BinaryIoU, self).__init__(name=name, **kwargs)
+        self.threshold = threshold
+        self.true_positives = self.add_weight(name='tp', initializer='zeros')
+        self.false_positives = self.add_weight(name='fp', initializer='zeros')
+        self.false_negatives = self.add_weight(name='fn', initializer='zeros')
+    
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        """Updates the state variables."""
+        # Threshold predictions to get binary values
+        y_pred_binary = tf.cast(y_pred > self.threshold, tf.float32)
+        y_true = tf.cast(y_true, tf.float32)
+        
+        # Calculate TP, FP, FN
+        true_positives = tf.reduce_sum(y_true * y_pred_binary)
+        false_positives = tf.reduce_sum((1 - y_true) * y_pred_binary)
+        false_negatives = tf.reduce_sum(y_true * (1 - y_pred_binary))
+        
+        # Update state
+        self.true_positives.assign_add(true_positives)
+        self.false_positives.assign_add(false_positives)
+        self.false_negatives.assign_add(false_negatives)
+    
+    def result(self):
+        """Computes and returns the IoU metric."""
+        denominator = self.true_positives + self.false_positives + self.false_negatives
+        # Avoid division by zero
+        denominator = tf.maximum(denominator, tf.keras.backend.epsilon())
+        return self.true_positives / denominator
+    
+    def reset_state(self):
+        """Resets all the state variables."""
+        self.true_positives.assign(0.)
+        self.false_positives.assign(0.)
+        self.false_negatives.assign(0.)
+
+
+class F1Score(tf.keras.metrics.Metric):
+    """Custom F1 Score metric for binary segmentation."""
+    
+    def __init__(self, threshold=0.5, name='f1_score', **kwargs):
+        super(F1Score, self).__init__(name=name, **kwargs)
+        self.threshold = threshold
+        self.true_positives = self.add_weight(name='tp', initializer='zeros')
+        self.false_positives = self.add_weight(name='fp', initializer='zeros')
+        self.false_negatives = self.add_weight(name='fn', initializer='zeros')
+    
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        """Updates the state variables."""
+        # Threshold predictions to get binary values
+        y_pred_binary = tf.cast(y_pred > self.threshold, tf.float32)
+        y_true = tf.cast(y_true, tf.float32)
+        
+        # Calculate TP, FP, FN
+        true_positives = tf.reduce_sum(y_true * y_pred_binary)
+        false_positives = tf.reduce_sum((1 - y_true) * y_pred_binary)
+        false_negatives = tf.reduce_sum(y_true * (1 - y_pred_binary))
+        
+        # Update state
+        self.true_positives.assign_add(true_positives)
+        self.false_positives.assign_add(false_positives)
+        self.false_negatives.assign_add(false_negatives)
+    
+    def result(self):
+        """Computes and returns the F1 score."""
+        # Calculate precision and recall
+        precision = tf.math.divide_no_nan(
+            self.true_positives, 
+            self.true_positives + self.false_positives
+        )
+        recall = tf.math.divide_no_nan(
+            self.true_positives,
+            self.true_positives + self.false_negatives
+        )
+        
+        # Calculate F1 score as harmonic mean of precision and recall
+        f1 = tf.math.divide_no_nan(
+            2 * precision * recall,
+            precision + recall
+        )
+        
+        return f1
+    
+    def reset_state(self):
+        """Resets all the state variables."""
+        self.true_positives.assign(0.)
+        self.false_positives.assign(0.)
+        self.false_negatives.assign(0.)
+
+
+class Specificity(tf.keras.metrics.Metric):
+    """Custom Specificity metric for binary segmentation."""
+    
+    def __init__(self, threshold=0.5, name='specificity', **kwargs):
+        super(Specificity, self).__init__(name=name, **kwargs)
+        self.threshold = threshold
+        self.true_negatives = self.add_weight(name='tn', initializer='zeros')
+        self.false_positives = self.add_weight(name='fp', initializer='zeros')
+    
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        """Updates the state variables."""
+        # Threshold predictions to get binary values
+        y_pred_binary = tf.cast(y_pred > self.threshold, tf.float32)
+        y_true = tf.cast(y_true, tf.float32)
+        
+        # Calculate TN and FP
+        true_negatives = tf.reduce_sum((1 - y_true) * (1 - y_pred_binary))
+        false_positives = tf.reduce_sum((1 - y_true) * y_pred_binary)
+        
+        # Update state
+        self.true_negatives.assign_add(true_negatives)
+        self.false_positives.assign_add(false_positives)
+    
+    def result(self):
+        """Computes and returns the specificity."""
+        # Specificity = TN / (TN + FP)
+        specificity = tf.math.divide_no_nan(
+            self.true_negatives,
+            self.true_negatives + self.false_positives
+        )
+        return specificity
+    
+    def reset_state(self):
+        """Resets all the state variables."""
+        self.true_negatives.assign(0.)
+        self.false_positives.assign(0.)
